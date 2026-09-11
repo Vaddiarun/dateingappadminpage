@@ -1,6 +1,7 @@
 import { API_BASE_URL } from './env'
 
 const TOKEN_KEY = 'admin_access_token'
+const REFRESH_KEY = 'admin_refresh_token'
 const ADMIN_KEY = 'admin_user'
 
 export class ApiError extends Error {
@@ -15,13 +16,19 @@ export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
 
-export function setSession(token: string, admin: unknown) {
+export function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_KEY)
+}
+
+export function setSession(token: string, admin: unknown, refreshToken?: string) {
   localStorage.setItem(TOKEN_KEY, token)
   localStorage.setItem(ADMIN_KEY, JSON.stringify(admin))
+  if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken)
 }
 
 export function clearSession() {
   localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(REFRESH_KEY)
   localStorage.removeItem(ADMIN_KEY)
 }
 
@@ -35,7 +42,53 @@ export function getStoredAdmin(): unknown | null {
   }
 }
 
-async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+/** Decode a JWT's payload without verifying it — just to read `exp` for refresh scheduling. */
+export function decodeJwtExpMs(token: string): number | null {
+  try {
+    const payload = token.split('.')[1]
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    const exp = JSON.parse(json).exp
+    return typeof exp === 'number' ? exp * 1000 : null
+  } catch {
+    return null
+  }
+}
+
+let unauthorizedHandler: (() => void) | null = null
+/** Called (once, from AuthProvider) so a hard session failure can also clear React state, not just localStorage. */
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
+
+let refreshPromise: Promise<string | null> | null = null
+
+/** POST /auth/token/refresh — confirmed live; not in the Postman collection but the login response's refreshToken implies it. Rotates the refresh token too. */
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) return null
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/token/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      })
+      if (!res.ok) return null
+      const body = (await res.json()) as { accessToken?: string; refreshToken?: string }
+      if (!body.accessToken) return null
+      setSession(body.accessToken, getStoredAdmin(), body.refreshToken)
+      return body.accessToken
+    } catch {
+      return null
+    }
+  })()
+  const result = await refreshPromise
+  refreshPromise = null
+  return result
+}
+
+async function apiFetch<T = unknown>(path: string, init: RequestInit = {}, isRetry = false): Promise<T> {
   const token = getToken()
   const headers = new Headers(init.headers)
   if (init.body) headers.set('Content-Type', 'application/json')
@@ -48,6 +101,14 @@ async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Prom
     throw new ApiError(0, `Could not reach the API at ${API_BASE_URL}. Is the backend running?`)
   }
 
+  if (res.status === 401 && !isRetry && path !== '/auth/token/refresh') {
+    const newToken = await refreshAccessToken()
+    if (newToken) return apiFetch<T>(path, init, true)
+    clearSession()
+    unauthorizedHandler?.()
+    throw new ApiError(401, 'Your session expired. Please sign in again.')
+  }
+
   const text = await res.text()
   const body = text ? safeJsonParse(text) : null
 
@@ -56,7 +117,6 @@ async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Prom
       (body && typeof body === 'object' && ((body as Record<string, unknown>).message || (body as Record<string, unknown>).error)) ||
       res.statusText ||
       `Request failed (${res.status})`
-    if (res.status === 401) clearSession()
     throw new ApiError(res.status, String(message))
   }
 
