@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout, Page } from './components/Layout'
 import { ResultCard } from './components/ResultCard'
+import { RequireAuth } from './lib/auth'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Users, UserDetail, UserActionApplied } from './pages/Users'
@@ -49,7 +50,13 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
 
-      <Route element={<Layout />}>
+      <Route
+        element={
+          <RequireAuth>
+            <Layout />
+          </RequireAuth>
+        }
+      >
         <Route path="/" element={<Dashboard />} />
 
         <Route path="/users" element={<Users />} />

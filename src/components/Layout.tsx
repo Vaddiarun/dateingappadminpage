@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react'
 import type { ReactNode } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 import {
   DashboardIcon,
   UsersIcon,
@@ -75,12 +77,34 @@ function Sidebar() {
 }
 
 function UserPill() {
+  const { admin, logout } = useAuth()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+
   return (
-    <button className="inline-flex h-8 items-center gap-2 rounded-full bg-primary pr-2.5 pl-1 text-[11px] text-white">
-      <span className="size-6 rounded-full bg-white/85" />
-      admin@company
-      <ChevronDownIcon size={13} />
-    </button>
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex h-8 items-center gap-2 rounded-full bg-primary pr-2.5 pl-1 text-[11px] text-white"
+      >
+        <span className="size-6 rounded-full bg-white/85" />
+        {admin?.email ?? 'admin@company'}
+        <ChevronDownIcon size={13} />
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 z-10 mt-1.5 w-36 overflow-hidden rounded-[var(--radius-control)] border border-line bg-surface shadow-sm">
+          <button
+            onClick={() => {
+              logout()
+              navigate('/login')
+            }}
+            className="block w-full px-3 py-2 text-left text-[12px] text-ink hover:bg-fill"
+          >
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

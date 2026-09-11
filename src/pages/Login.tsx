@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui'
 import { EyeIcon, EyeOffIcon, LogoMark } from '../components/Icon'
+import { useAuth } from '../lib/auth'
 
 function FieldLabel({ children }: { children: string }) {
   return <span className="text-[13px] text-muted">{children}</span>
@@ -9,19 +10,29 @@ function FieldLabel({ children }: { children: string }) {
 
 export function Login() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
-    // Demo: any non-empty email + password signs in; empty shows the error state.
     if (!email || !password) {
-      setError(true)
+      setError('Enter both email and password.')
       return
     }
-    navigate('/')
+    setSubmitting(true)
+    setError(null)
+    try {
+      await login(email, password)
+      navigate('/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -70,12 +81,10 @@ export function Login() {
           </button>
         </div>
 
-        {error && (
-          <p className="mt-3 text-[13px] text-danger">Something went wrong.</p>
-        )}
+        {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
 
-        <Button type="submit" className="mt-4 w-full">
-          Sign In
+        <Button type="submit" className="mt-4 w-full" disabled={submitting}>
+          {submitting ? 'Signing in…' : 'Sign In'}
         </Button>
       </form>
     </div>

@@ -266,7 +266,7 @@ export function Cell({
   children,
   className = '',
 }: {
-  children: ReactNode
+  children?: ReactNode
   className?: string
 }) {
   return <td className={`px-5 py-3 text-ink ${className}`}>{children}</td>
@@ -322,6 +322,25 @@ export function Tabs({
         </button>
       ))}
     </div>
+  )
+}
+
+/* ---------- Async states ---------- */
+
+export function LoadingState({ label = 'Loading…' }: { label?: string }) {
+  return <div className="p-8 text-center text-[12px] text-muted">{label}</div>
+}
+
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <Card className="flex flex-col items-center gap-3 p-8 text-center">
+      <p className="text-[12px] text-danger">{message}</p>
+      {onRetry && (
+        <Button size="sm" variant="outline" onClick={onRetry}>
+          Retry
+        </Button>
+      )}
+    </Card>
   )
 }
 

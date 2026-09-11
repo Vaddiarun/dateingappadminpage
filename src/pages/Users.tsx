@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Page } from '../components/Layout'
 import {
   Table,
@@ -14,19 +14,40 @@ import {
   KVList,
   KVRow,
   DetailGrid,
+  LoadingState,
+  ErrorState,
 } from '../components/ui'
-import { ConfirmDialog } from '../components/ConfirmDialog'
+import { ConfirmDialog, type ConfirmSpec } from '../components/ConfirmDialog'
 import { ResultCard } from '../components/ResultCard'
-import { users, accountActivity, accountReports } from '../data'
+import { getUser, listUsers, setAccountStatus, ApiError } from '../lib/api'
+import { useAsync } from '../lib/useAsync'
+import { formatDate } from '../lib/format'
+import { pick, pickAny, unwrapList, unwrapObject } from '../lib/pick'
+
+type UserRow = { id: string; email: string; status: string; lastActive: string }
+export type ActivityItem = { type: string; reference: string; when: string; accent?: boolean }
+export type ReportItem = { reason: string; reportedBy: string; when: string }
+
+function toUserRow(u: unknown): UserRow {
+  return {
+    id: pickAny(u, ['id', '_id'], '—'),
+    email: pickAny(u, ['email', 'phone'], '—'),
+    status: pick(u, 'status', '—'),
+    lastActive: formatDate(pickAny(u, ['lastActive', 'lastActiveAt'], null)),
+  }
+}
 
 export function Users() {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
-  const rows = users.filter(
-    (u) =>
-      u.id.toLowerCase().includes(q.toLowerCase()) ||
-      u.email.toLowerCase().includes(q.toLowerCase()),
-  )
+  const { data, loading, error, reload } = useAsync(() => listUsers(), [])
+  const rows = unwrapList<Record<string, unknown>>(data, 'users')
+    .map(toUserRow)
+    .filter(
+      (u) =>
+        u.id.toLowerCase().includes(q.toLowerCase()) ||
+        u.email.toLowerCase().includes(q.toLowerCase()),
+    )
 
   return (
     <Page
@@ -38,23 +59,29 @@ export function Users() {
         </>
       }
     >
-      <Table columns={['User', 'Email', 'Status', 'Last Active']}>
-        {rows.map((u) => (
-          <Row key={u.id} onClick={() => navigate(`/users/${u.id}`)}>
-            <Cell>{u.id}</Cell>
-            <Cell className="text-muted">{u.email}</Cell>
-            <Cell>
-              <StatusText label={u.status} />
-            </Cell>
-            <Cell className="text-muted">{u.lastActive}</Cell>
-          </Row>
-        ))}
-      </Table>
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message={error} onRetry={reload} />
+      ) : (
+        <Table columns={['User', 'Email', 'Status', 'Last Active']}>
+          {rows.map((u, i) => (
+            <Row key={`${u.id}-${i}`} onClick={() => navigate(`/users/${u.id}`)}>
+              <Cell>{u.id}</Cell>
+              <Cell className="text-muted">{u.email}</Cell>
+              <Cell>
+                <StatusText label={u.status} />
+              </Cell>
+              <Cell className="text-muted">{u.lastActive}</Cell>
+            </Row>
+          ))}
+        </Table>
+      )}
     </Page>
   )
 }
 
-export function AccountActivityCard() {
+export function AccountActivityCard({ activity }: { activity: ActivityItem[] }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader>Activity</CardHeader>
@@ -72,8 +99,8 @@ export function AccountActivityCard() {
           </tr>
         </thead>
         <tbody>
-          {accountActivity.map((a) => (
-            <tr key={a.type} className="border-b border-line last:border-0">
+          {activity.map((a, i) => (
+            <tr key={i} className="border-b border-line last:border-0">
               <td className="px-5 py-3 text-ink">{a.type}</td>
               <td className={`px-5 py-3 ${a.accent ? 'text-amber' : 'text-ink'}`}>
                 {a.reference}
@@ -81,13 +108,20 @@ export function AccountActivityCard() {
               <td className="px-5 py-3 text-muted">{a.when}</td>
             </tr>
           ))}
+          {activity.length === 0 && (
+            <tr>
+              <td colSpan={3} className="px-5 py-6 text-center text-muted">
+                No recent activity.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </Card>
   )
 }
 
-export function AccountReportsCard() {
+export function AccountReportsCard({ reports }: { reports: ReportItem[] }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader>Reports Against This Account</CardHeader>
@@ -105,13 +139,20 @@ export function AccountReportsCard() {
           </tr>
         </thead>
         <tbody>
-          {accountReports.map((r) => (
-            <tr key={r.reason} className="border-b border-line last:border-0">
+          {reports.map((r, i) => (
+            <tr key={i} className="border-b border-line last:border-0">
               <td className="px-5 py-3 text-ink">{r.reason}</td>
               <td className="px-5 py-3 text-muted">{r.reportedBy}</td>
               <td className="px-5 py-3 text-muted">{r.when}</td>
             </tr>
           ))}
+          {reports.length === 0 && (
+            <tr>
+              <td colSpan={3} className="px-5 py-6 text-center text-muted">
+                No reports filed.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </Card>
@@ -161,53 +202,95 @@ export function AccountCard({
 }
 
 export function UserDetail() {
-  const { id = 'User_2481' } = useParams()
+  const { id = '' } = useParams()
   const navigate = useNavigate()
-  const user = users.find((u) => u.id === id)
-  const [confirm, setConfirm] = useState(false)
+  const { data: user, loading, error, reload } = useAsync(() => getUser(id), [id])
+  const [confirm, setConfirm] = useState<{ kind: 'Suspend' | 'Ban' } | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  if (loading) return <Page title={id} breadcrumb="Users"><LoadingState /></Page>
+  if (error) return <Page title={id} breadcrumb="Users"><ErrorState message={error} onRetry={reload} /></Page>
+
+  // The single-record GET wraps the account under `user`, unlike the list endpoint (confirmed live).
+  const account = unwrapObject(user, 'user')
+  const activity = unwrapList<Record<string, unknown>>(user, 'activity', 'activityFeed').map((a) => ({
+    type: pick(a, 'type', '—'),
+    reference: pick(a, 'reference', '—'),
+    when: formatDate(pick(a, 'when', null)),
+    accent: pick(a, 'accent', false),
+  }))
+  const reports = unwrapList<Record<string, unknown>>(user, 'reportsAgainstAccount', 'reports', 'moderationReports').map((r) => ({
+    reason: pick(r, 'reason', '—'),
+    reportedBy: pickAny(r, ['reportedBy', 'reporterId'], '—'),
+    when: formatDate(pick(r, 'when', null)),
+  }))
+
+  const spec: ConfirmSpec | null = confirm
+    ? {
+        title: `${confirm.kind === 'Ban' ? 'Ban' : 'Suspend'} User`,
+        subtitle: `User: ${id}`,
+        question: 'Are you sure you want to permanently ban/Suspend this account?',
+        context: 'This action will immediately end any active session for this account.',
+        reason: true,
+        confirmLabel: 'Confirm Action',
+      }
+    : null
 
   return (
     <Page title={id} breadcrumb="Users">
       <DetailGrid variant="aside-main">
         <AccountCard
           id={id}
-          email={user?.email ?? `${id.toLowerCase()}@mail`}
+          email={pickAny<string>(account, ['email', 'phone'], '—')}
           rows={[
-            { label: 'Status', value: <StatusText label={user?.status ?? 'Active'} /> },
-            { label: 'Joined', value: '12 Mar 2026' },
+            { label: 'Status', value: <StatusText label={pick(account, 'status', '—')} /> },
+            { label: 'Joined', value: formatDate(pickAny(account, ['createdAt', 'joinedAt'], null)) },
             { label: 'Session', value: <span className="text-ok">Active now</span> },
           ]}
-          onAction={() => setConfirm(true)}
+          onAction={(kind) => setConfirm({ kind })}
         />
         <div className="flex flex-col gap-4">
-          <AccountActivityCard />
-          <AccountReportsCard />
+          <AccountActivityCard activity={activity} />
+          <AccountReportsCard reports={reports} />
         </div>
       </DetailGrid>
 
+      {actionError && <p className="mt-3 text-[12px] text-danger">{actionError}</p>}
+
       <ConfirmDialog
-        open={confirm}
-        spec={{
-          title: 'Ban/Suspend User',
-          subtitle: `User: ${id}`,
-          question: 'Are you sure you want to permanently ban/Suspend this account?',
-          context: 'This action will immediately end any active session for this account.',
-          confirmLabel: 'Confirm Action',
+        open={confirm !== null}
+        spec={spec}
+        onCancel={() => setConfirm(null)}
+        onConfirm={async (reason) => {
+          if (!confirm) return
+          setSubmitting(true)
+          setActionError(null)
+          try {
+            await setAccountStatus(id, confirm.kind === 'Ban' ? 'banned' : 'suspended', reason)
+            navigate(`/users/${id}/applied?a=${confirm.kind}`)
+          } catch (err) {
+            setActionError(err instanceof ApiError ? err.message : 'Something went wrong.')
+          } finally {
+            setSubmitting(false)
+            setConfirm(null)
+          }
         }}
-        onCancel={() => setConfirm(false)}
-        onConfirm={() => navigate(`/users/${id}/applied`)}
       />
+      {submitting && <LoadingState label="Applying…" />}
     </Page>
   )
 }
 
 export function UserActionApplied() {
-  const { id = 'User_2481' } = useParams()
+  const { id = '' } = useParams()
+  const [params] = useSearchParams()
+  const kind = params.get('a') === 'Ban' ? 'Banned' : 'Suspended'
   return (
     <Page title="Dashboard">
       <ResultCard
         title="Action applied"
-        body={`${id} has been Banned/ Suspended and the active session was terminated immediately. The report is closed and the action was written to the audit log.`}
+        body={`${id} has been ${kind} and the active session was terminated immediately. The report is closed and the action was written to the audit log.`}
         actions={[
           { label: 'Back to Dashboard', to: '/' },
           { label: 'Back to Users', to: '/users' },

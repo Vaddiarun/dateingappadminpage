@@ -1,12 +1,22 @@
 import { useState } from 'react'
 import { Page } from '../components/Layout'
-import { Card, Button, Note, FilterButton } from '../components/ui'
+import { Card, Button, Note, FilterButton, LoadingState, ErrorState } from '../components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { getAdultModeConfig, setAdultModeConfig, ApiError } from '../lib/api'
+import { useAsync } from '../lib/useAsync'
+import { latestConfig } from '../lib/configHistory'
+import { pick, unwrapList } from '../lib/pick'
 
 export function AgeMode() {
-  const [enabled, setEnabled] = useState(true)
+  const { data, loading, error, reload } = useAsync(() => getAdultModeConfig(), [])
   const [pending, setPending] = useState<boolean | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
+  if (loading) return <Page title="18+ Mode"><LoadingState /></Page>
+  if (error) return <Page title="18+ Mode"><ErrorState message={error} onRetry={reload} /></Page>
+
+  const enabled = pick(latestConfig(unwrapList<Record<string, unknown>>(data, 'configs')), 'enabled', false)
   const next = pending ?? !enabled
 
   return (
@@ -44,6 +54,7 @@ export function AgeMode() {
               Change
             </Button>
           </div>
+          {saveError && <p className="text-[11px] text-danger">{saveError}</p>}
           <Note>Accessible to Super Admin Only</Note>
         </div>
       </Card>
@@ -51,7 +62,7 @@ export function AgeMode() {
       <ConfirmDialog
         open={pending !== null}
         spec={{
-          title: 'Confirm moderation action',
+          title: 'Confirm 18+ mode change',
           compare: [
             { label: 'Previous', value: enabled ? 'ON' : 'OFF' },
             { label: 'New', value: next ? 'ON' : 'OFF' },
@@ -60,11 +71,22 @@ export function AgeMode() {
           confirmLabel: 'Confirm Action',
         }}
         onCancel={() => setPending(null)}
-        onConfirm={() => {
-          setEnabled(next)
-          setPending(null)
+        onConfirm={async () => {
+          setSaving(true)
+          setSaveError(null)
+          try {
+            await setAdultModeConfig(next)
+            setPending(null)
+            reload()
+          } catch (err) {
+            setSaveError(err instanceof ApiError ? err.message : 'Something went wrong.')
+            setPending(null)
+          } finally {
+            setSaving(false)
+          }
         }}
       />
+      {saving && <LoadingState label="Saving…" />}
     </Page>
   )
 }

@@ -12,17 +12,34 @@ import {
   Field,
   Input,
   Label,
+  LoadingState,
+  ErrorState,
 } from '../components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ResultCard } from '../components/ResultCard'
-import { broadcasts } from '../data'
+import { listBroadcastMessages, sendBroadcastMessage, ApiError } from '../lib/api'
+import { useAsync } from '../lib/useAsync'
+import { formatDate } from '../lib/format'
+import { pick, pickAny, unwrapList } from '../lib/pick'
+
+const RECIPIENT_OPTIONS = [
+  { value: 'all', label: 'All Users & Hosts' },
+  { value: 'all_users', label: 'All Users' },
+  { value: 'all_hosts', label: 'All Hosts' },
+] as const
 
 export function Broadcast() {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
-  const rows = broadcasts.filter((b) =>
-    b.message.toLowerCase().includes(q.toLowerCase()),
-  )
+  const { data, loading, error, reload } = useAsync(() => listBroadcastMessages(), [])
+  const rows = unwrapList<Record<string, unknown>>(data, 'messages', 'broadcasts')
+    .map((b) => ({
+      message: pickAny(b, ['title', 'message'], '—'),
+      recipients: pick(b, 'recipients', '—'),
+      sentBy: pickAny(b, ['sentByName', 'sentByAdminId', 'sentBy', 'adminEmail'], '—'),
+      sent: formatDate(pickAny(b, ['sentAt', 'createdAt'], null)),
+    }))
+    .filter((b) => b.message.toLowerCase().includes(q.toLowerCase()))
 
   return (
     <Page
@@ -36,16 +53,22 @@ export function Broadcast() {
         </>
       }
     >
-      <Table columns={['Message', 'Recipients', 'Sent By', 'Sent']}>
-        {rows.map((b, i) => (
-          <Row key={i}>
-            <Cell>{b.message}</Cell>
-            <Cell className="text-muted">{b.recipients}</Cell>
-            <Cell className="text-muted">{b.sentBy}</Cell>
-            <Cell className="text-muted">{b.sent}</Cell>
-          </Row>
-        ))}
-      </Table>
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message={error} onRetry={reload} />
+      ) : (
+        <Table columns={['Message', 'Recipients', 'Sent By', 'Sent']}>
+          {rows.map((b, i) => (
+            <Row key={i}>
+              <Cell>{b.message}</Cell>
+              <Cell className="text-muted">{b.recipients}</Cell>
+              <Cell className="text-muted">{b.sentBy}</Cell>
+              <Cell className="text-muted">{b.sent}</Cell>
+            </Row>
+          ))}
+        </Table>
+      )}
     </Page>
   )
 }
@@ -53,9 +76,11 @@ export function Broadcast() {
 export function BroadcastNew() {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
-  const [recipients, setRecipients] = useState('All users')
+  const [recipients, setRecipients] = useState<(typeof RECIPIENT_OPTIONS)[number]['value']>('all')
   const [message, setMessage] = useState('')
   const [confirm, setConfirm] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
 
   return (
     <Page title="Broadcast Messaging">
@@ -70,23 +95,19 @@ export function BroadcastNew() {
                 placeholder="Scheduled maintenance tonight"
               />
             </Field>
-            <Field label="Recipients">
-              <Input
+            <div className="flex flex-col gap-1.5">
+              <Label>Recipients</Label>
+              <select
                 value={recipients}
-                onChange={(e) => setRecipients(e.target.value)}
-              />
-            </Field>
-            <div className="flex flex-col gap-1.5">
-              <Label>Sent By</Label>
-              <div className="flex h-10 items-center rounded-[var(--radius-control)] bg-fill px-3 text-[12px] text-ink">
-                Admin A
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Sent</Label>
-              <div className="flex h-10 items-center rounded-[var(--radius-control)] bg-fill px-3 text-[12px] text-ink">
-                12 Aug 2026 · 18:20
-              </div>
+                onChange={(e) => setRecipients(e.target.value as typeof recipients)}
+                className="h-10 rounded-[var(--radius-control)] bg-fill px-3 text-[12px] text-ink outline-none ring-1 ring-transparent focus:ring-primary/40"
+              >
+                {RECIPIENT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -107,13 +128,14 @@ export function BroadcastNew() {
               </Button>
               <Button
                 size="sm"
-                disabled={!message.trim()}
+                disabled={!message.trim() || !title.trim()}
                 onClick={() => setConfirm(true)}
               >
                 Send
               </Button>
             </div>
           </div>
+          {sendError && <p className="mt-2 text-[11px] text-danger">{sendError}</p>}
         </div>
       </Card>
 
@@ -126,8 +148,21 @@ export function BroadcastNew() {
           confirmLabel: 'Confirm & Send',
         }}
         onCancel={() => setConfirm(false)}
-        onConfirm={() => navigate('/broadcast/sent')}
+        onConfirm={async () => {
+          setConfirm(false)
+          setSending(true)
+          setSendError(null)
+          try {
+            await sendBroadcastMessage(title, message, recipients)
+            navigate('/broadcast/sent')
+          } catch (err) {
+            setSendError(err instanceof ApiError ? err.message : 'Something went wrong.')
+          } finally {
+            setSending(false)
+          }
+        }}
       />
+      {sending && <LoadingState label="Sending…" />}
     </Page>
   )
 }
@@ -137,7 +172,7 @@ export function BroadcastSent() {
     <Page title="Dashboard">
       <ResultCard
         title="Message sent"
-        body="The broadcast message was delivered to all users & hosts. This action was written to the audit log."
+        body="The broadcast message was delivered. This action was written to the audit log."
         actions={[
           { label: 'Back to Dashboard', to: '/' },
           { label: 'Back to Message Queue', to: '/broadcast' },

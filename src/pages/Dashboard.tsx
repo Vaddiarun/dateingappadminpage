@@ -1,26 +1,23 @@
 import { Page } from '../components/Layout'
-import { Card, CardHeader, Label, Badge, FilterButton } from '../components/ui'
-import {
-  dashboardStats,
-  revenueSeries,
-  topEarningHosts,
-} from '../data'
+import { Card, CardHeader, Label, Badge, FilterButton, LoadingState, ErrorState } from '../components/ui'
+import { getDashboard } from '../lib/api'
+import { useAsync } from '../lib/useAsync'
+import { formatNumber, formatPaise } from '../lib/format'
+import { pick, pickAny, unwrapList } from '../lib/pick'
 
 function Stat({
   label,
   value,
   sub,
   accent,
-  wide,
 }: {
   label: string
   value: string
   sub?: string
   accent?: boolean
-  wide?: boolean
 }) {
   return (
-    <Card className={`px-5 py-4 ${wide ? '' : ''}`}>
+    <Card className="px-5 py-4">
       <Label>{label}</Label>
       <div
         className={`mt-2 text-[22px] leading-tight font-medium ${
@@ -34,15 +31,16 @@ function Stat({
   )
 }
 
-function RevenueChart() {
+function RevenueChart({ series }: { series: number[] }) {
+  const max = Math.max(1, ...series)
   return (
     <div className="rounded-[var(--radius-control)] bg-primary-soft/50 px-6 pt-8 pb-3">
       <div className="flex h-40 items-end gap-3">
-        {revenueSeries.map((h, i) => (
+        {series.map((v, i) => (
           <div
             key={i}
             className="flex-1 rounded-t-[3px] bg-[#c9b8ec]"
-            style={{ height: `${h * 100}%` }}
+            style={{ height: `${(v / max) * 100}%` }}
           />
         ))}
       </div>
@@ -51,26 +49,43 @@ function RevenueChart() {
   )
 }
 
+type TopHost = { host: string; earnings: string; minutes: string; status: string }
+
 export function Dashboard() {
+  const { data, loading, error, reload } = useAsync(() => getDashboard(), [])
+
+  if (loading) return <Page title="Dashboard"><LoadingState /></Page>
+  if (error) return <Page title="Dashboard"><ErrorState message={error} onRetry={reload} /></Page>
+
+  const series = unwrapList<Record<string, unknown>>(data, 'series', 'daily').map((row) =>
+    pickAny<number>(row, ['revenuePaise', 'revenue', 'value'], 0),
+  )
+  const topEarningHosts: TopHost[] = unwrapList<Record<string, unknown>>(data, 'topEarningHosts').map((h) => ({
+    host: pickAny(h, ['hostId', 'host', 'id'], '—'),
+    earnings: formatPaise(pickAny(h, ['earningsPaise', 'earnings'], 0)),
+    minutes: formatNumber(pickAny(h, ['minutes', 'callMinutes'], 0)),
+    status: pickAny(h, ['status'], 'Active'),
+  }))
+
   return (
     <Page title="Dashboard">
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-3 gap-4">
           <Stat
             label="Revenue"
-            value={`₹ ${dashboardStats.revenue}`}
+            value={`₹ ${formatPaise(pickAny(data, ['revenuePaise', 'revenue'], 0))}`}
             sub="Selected period"
             accent
           />
-          <Stat label="Active Users" value={dashboardStats.activeUsers} />
-          <Stat label="Active Hosts" value={dashboardStats.activeHosts} />
+          <Stat label="Active Users" value={formatNumber(pick(data, 'activeUsers', 0))} />
+          <Stat label="Active Hosts" value={formatNumber(pick(data, 'activeHosts', 0))} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Stat label="Total Call Minutes" value={dashboardStats.totalCallMinutes} />
+          <Stat label="Total Call Minutes" value={formatNumber(pick(data, 'totalCallMinutes', 0))} />
           <Stat
             label="Commission Collected"
-            value={`₹ ${dashboardStats.commissionCollected}`}
+            value={`₹ ${formatPaise(pickAny(data, ['commissionCollectedPaise', 'commissionCollected'], 0))}`}
             accent
           />
         </div>
@@ -83,7 +98,7 @@ export function Dashboard() {
             <FilterButton label="Last 30 days" />
           </div>
           <div className="p-5">
-            <RevenueChart />
+            <RevenueChart series={series.length ? series : [0]} />
             <p className="mt-3 text-[10px] text-muted">
               Revenue (bars) · call minutes (secondary series)
             </p>
@@ -107,8 +122,8 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {topEarningHosts.map((h) => (
-                  <tr key={h.host} className="border-b border-line last:border-0">
+                {topEarningHosts.map((h, i) => (
+                  <tr key={h.host + i} className="border-b border-line last:border-0">
                     <td className="px-4 py-3 text-ink">{h.host}</td>
                     <td className="px-4 py-3 text-amber">₹ {h.earnings}</td>
                     <td className="px-4 py-3 text-ink">{h.minutes}</td>
@@ -117,6 +132,13 @@ export function Dashboard() {
                     </td>
                   </tr>
                 ))}
+                {topEarningHosts.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-muted">
+                      No data for this period.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
