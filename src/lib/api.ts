@@ -62,14 +62,14 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 
 let refreshPromise: Promise<string | null> | null = null
 
-/** POST /auth/token/refresh — confirmed live; not in the Postman collection but the login response's refreshToken implies it. Rotates the refresh token too. */
+/** POST /admin/auth/token/refresh — confirmed live. The backend namespaces every endpoint by app surface (/user/*, /host/*, /admin/*), so this sits under /admin like the rest of this file, not the old unprefixed /auth/token/refresh. Rotates the refresh token too. */
 export async function refreshAccessToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise
   refreshPromise = (async () => {
     const refreshToken = getRefreshToken()
     if (!refreshToken) return null
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/token/refresh`, {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/token/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -101,7 +101,7 @@ async function apiFetch<T = unknown>(path: string, init: RequestInit = {}, isRet
     throw new ApiError(0, `Could not reach the API at ${API_BASE_URL}. Is the backend running?`)
   }
 
-  if (res.status === 401 && !isRetry && path !== '/auth/token/refresh') {
+  if (res.status === 401 && !isRetry && path !== '/admin/auth/token/refresh') {
     const newToken = await refreshAccessToken()
     if (newToken) return apiFetch<T>(path, init, true)
     clearSession()
@@ -140,7 +140,7 @@ function qs(params: Record<string, string | number | undefined>): string {
 /* ---------- Auth ---------- */
 
 export function adminLogin(email: string, password: string) {
-  return apiFetch<unknown>('/auth/admin/login', {
+  return apiFetch<unknown>('/admin/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
