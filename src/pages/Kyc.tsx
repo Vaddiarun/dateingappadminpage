@@ -99,21 +99,35 @@ export function KycDetail() {
   if (loading) return <Page title={`Submission · ${id}`} breadcrumb="KYC"><LoadingState /></Page>
   if (error) return <Page title={`Submission · ${id}`} breadcrumb="KYC"><ErrorState message={error} onRetry={reload} /></Page>
 
+const DOCUMENT_LABELS: Record<string, string> = {
+    id_front: 'Government ID (front)',
+    id_back: 'Government ID (back)',
+    selfie: 'Selfie check',
+    address_proof: 'Address proof',
+    audition_video: 'Live audition video',
+  }
+
   const docs = unwrapList<Record<string, unknown>>(sub, 'documents').map((d) => {
     const url = pickAny<string | null>(d, ['documentViewUrl', 'url', 'viewUrl', 'presignedUrl'], null)
+    const documentType = pickAny<string>(d, ['documentType'], '')
     // Presigned S3 URLs carry a query string; check the path, not the whole URL.
-    const isPdf = !!url && (() => {
-      try {
-        return /\.pdf$/i.test(new URL(url).pathname)
-      } catch {
-        return /\.pdf(\?|$)/i.test(url)
-      }
-    })()
+    const matchesExtension = (pattern: RegExp) =>
+      !!url &&
+      (() => {
+        try {
+          return pattern.test(new URL(url).pathname)
+        } catch {
+          return pattern.test(url)
+        }
+      })()
+    const isPdf = matchesExtension(/\.pdf$/i)
+    const isVideo = documentType === 'audition_video' || matchesExtension(/\.(webm|mp4)$/i)
     return {
       key: pickAny(d, ['documentType', 'key'], 'document'),
-      label: pickAny(d, ['label', 'documentType'], 'Document'),
+      label: DOCUMENT_LABELS[documentType] ?? pickAny(d, ['label', 'documentType'], 'Document'),
       url,
       isPdf,
+      isVideo,
     }
   })
   const viewerDoc = viewer !== null ? docs[viewer] : null
@@ -145,6 +159,8 @@ export function KycDetail() {
                 {viewerDoc.url ? (
                   viewerDoc.isPdf ? (
                     <iframe src={viewerDoc.url} title={viewerDoc.label} className="h-[440px] w-full" />
+                  ) : viewerDoc.isVideo ? (
+                    <video src={viewerDoc.url} controls className="max-h-[440px] w-full" />
                   ) : (
                     <img src={viewerDoc.url} alt={viewerDoc.label} className="max-h-[440px] w-full object-contain" />
                   )
@@ -169,6 +185,8 @@ export function KycDetail() {
                     {d.url ? (
                       d.isPdf ? (
                         'PDF document'
+                      ) : d.isVideo ? (
+                        <video src={d.url} className="h-full w-full object-cover" muted />
                       ) : (
                         <img src={d.url} alt={d.label} className="h-full w-full object-cover" />
                       )
