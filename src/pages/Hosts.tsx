@@ -107,6 +107,7 @@ function Gallery({ hostId }: { hostId: string }) {
     id: pick(it, 'id', ''),
     kind: pick<'photo' | 'video'>(it, 'mediaType', 'photo'),
     duration: pick(it, 'duration', ''),
+    url: pick<string>(it, 'url', ''),
   }))
   const target = items.find((i) => i.id === toDelete)
 
@@ -127,20 +128,33 @@ function Gallery({ hostId }: { hostId: string }) {
               key={it.id}
               className="overflow-hidden rounded-[var(--radius-control)] border border-line"
             >
-              <div className="relative grid h-24 place-items-center bg-fill text-[10px] text-faint">
+              <a
+                href={it.url}
+                target="_blank"
+                rel="noreferrer"
+                className="relative grid h-24 place-items-center overflow-hidden bg-fill text-[10px] text-faint"
+              >
+                {it.url ? (
+                  it.kind === 'video' ? (
+                    <video src={it.url} className="h-full w-full object-cover" muted />
+                  ) : (
+                    <img src={it.url} alt="" className="h-full w-full object-cover" />
+                  )
+                ) : (
+                  it.kind === 'video' ? 'Video thumbnail' : 'Photo thumbnail'
+                )}
                 {it.kind === 'video' && (
-                  <span className="absolute top-1.5 left-1.5 text-muted">
+                  <span className="absolute top-1.5 left-1.5 text-white drop-shadow">
                     <PlayIcon size={12} />
                   </span>
                 )}
                 <button
-                  onClick={() => setToDelete(it.id)}
+                  onClick={(e) => { e.preventDefault(); setToDelete(it.id) }}
                   className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-md border border-danger/40 bg-surface text-danger hover:bg-danger/5"
                 >
                   <TrashIcon size={11} />
                 </button>
-                {it.kind === 'video' ? 'Video thumbnail' : 'Photo thumbnail'}
-              </div>
+              </a>
               <div className="border-t border-line px-2 py-1.5 text-[10px] text-muted">
                 {it.kind === 'video' ? `Video · ${it.duration}` : 'Photo'}
               </div>
