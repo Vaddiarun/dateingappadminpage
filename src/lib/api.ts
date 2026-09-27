@@ -325,19 +325,6 @@ export function sendBroadcastMessage(title: string, message: string, recipients:
   })
 }
 
-/* ---------- Adult Mode ---------- */
-
-export function getAdultModeConfig() {
-  return apiFetch<unknown>('/admin/config/adult-mode')
-}
-
-export function setAdultModeConfig(enabled: boolean) {
-  return apiFetch<unknown>('/admin/config/adult-mode', {
-    method: 'POST',
-    body: JSON.stringify({ enabled }),
-  })
-}
-
 /* ---------- Audit & Dashboard ---------- */
 
 export function getAuditLog(opts?: { limit?: number; adminId?: string; from?: string; to?: string }) {

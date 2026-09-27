@@ -11,7 +11,6 @@ import {
   WithdrawalsIcon,
   PricingIcon,
   ModerationIcon,
-  AgeModeIcon,
   AuditIcon,
   BroadcastIcon,
   ChevronDownIcon,
@@ -28,7 +27,6 @@ const NAV: NavItem[] = [
   { to: '/withdrawals', label: 'Withdrawals', icon: WithdrawalsIcon },
   { to: '/pricing', label: 'Pricing & Economics', icon: PricingIcon },
   { to: '/moderation', label: 'Moderation', icon: ModerationIcon },
-  { to: '/age-mode', label: '18+ Mode', icon: AgeModeIcon },
   { to: '/audit-logs', label: 'Audit Logs', icon: AuditIcon },
   { to: '/broadcast', label: 'Broadcast Messaging', icon: BroadcastIcon },
 ]

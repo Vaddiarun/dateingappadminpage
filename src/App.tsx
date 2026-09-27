@@ -29,7 +29,6 @@ import {
   ModerationDetail,
   ModerationActionApplied,
 } from './pages/Moderation'
-import { AgeMode } from './pages/AgeMode'
 import { AuditLogs } from './pages/AuditLogs'
 import { Broadcast, BroadcastNew, BroadcastSent } from './pages/Broadcast'
 
@@ -110,7 +109,6 @@ function App() {
           element={<ModerationActionApplied />}
         />
 
-        <Route path="/age-mode" element={<AgeMode />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
 
         <Route path="/broadcast" element={<Broadcast />} />
