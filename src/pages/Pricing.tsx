@@ -95,6 +95,13 @@ export function Pricing() {
       action: 'Open',
       to: '/pricing/auto-approval',
     },
+    {
+      key: 'media',
+      title: 'Media & Video Cost',
+      summary: 'Which network carries calls and live video',
+      action: 'Open',
+      to: '/pricing/media-cost',
+    },
   ]
 
   return (

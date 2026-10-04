@@ -24,6 +24,7 @@ import {
   GiftCatalog,
   EditGift,
 } from './pages/PricingConfig'
+import { MediaCost } from './pages/MediaCost'
 import {
   Moderation,
   ModerationDetail,
@@ -90,6 +91,7 @@ function App() {
         />
         <Route path="/pricing/host-override" element={<HostCommissionOverride />} />
         <Route path="/pricing/withdrawal-slabs" element={<WithdrawalSlabs />} />
+        <Route path="/pricing/media-cost" element={<MediaCost />} />
         <Route path="/pricing/gift-catalog" element={<GiftCatalog />} />
         <Route path="/pricing/gift-catalog/:id/edit" element={<EditGift />} />
         <Route

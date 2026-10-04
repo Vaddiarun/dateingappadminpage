@@ -237,6 +237,46 @@ export function replaceWithdrawalSlabsConfig(slabs: WithdrawalSlabInput[]) {
   })
 }
 
+/* ---------- Media cost (which network carries calls / live video) ---------- */
+
+export type CallMediaMode = 'agora' | 'p2p' | 'auto'
+export type CallMediaConfig = { current: CallMediaMode; autoP2pPercent: number; agoraKickOnEnd: boolean }
+
+export function getCallMediaConfig() {
+  return apiFetch<CallMediaConfig>('/admin/config/call-media')
+}
+
+export function setCallMediaConfig(config: { provider: CallMediaMode; autoP2pPercent: number; agoraKickOnEnd: boolean }) {
+  return apiFetch<unknown>('/admin/config/call-media', { method: 'POST', body: JSON.stringify(config) })
+}
+
+export type LiveMediaProvider = 'agora' | 'cloudflare'
+export type LiveMediaConfig = { provider: LiveMediaProvider; agoraKickOnEnd: boolean; pauseHiddenVideo: boolean }
+
+export function getLiveMediaConfig() {
+  return apiFetch<LiveMediaConfig>('/admin/config/live-media')
+}
+
+export function setLiveMediaConfig(config: LiveMediaConfig) {
+  return apiFetch<unknown>('/admin/config/live-media', { method: 'POST', body: JSON.stringify(config) })
+}
+
+export type MediaQualityRow = {
+  mediaProvider: 'agora' | 'p2p'
+  reports: number
+  connectedPercent: number | null
+  relayedPercent: number | null
+  avgConnectMs: number | null
+  avgRttMs: number | null
+  avgPacketLossPercent: number | null
+  avgVideoKbps: number | null
+}
+export type MediaQuality = { days: number; byProvider: MediaQualityRow[]; autoCalls: number; fellBackToAgora: number }
+
+export function getCallMediaQuality(days: number) {
+  return apiFetch<MediaQuality>(`/admin/calls/media-quality?days=${days}`)
+}
+
 export function listGiftsAdmin() {
   return apiFetch<unknown>('/admin/gifts')
 }
