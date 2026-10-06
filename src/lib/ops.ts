@@ -35,6 +35,25 @@ export const replyToTicket = (id: string, content: string) =>
 export const updateTicket = (id: string, patch: { status?: string; priority?: string; assigneeId?: string | null }) =>
   apiFetch<unknown>(`/admin/support/tickets/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) })
 
+/* ---------- Support bot: help articles + settings ----------
+ * Paths assumed until the backend confirms them (see docs/BACKEND_OPS_API.md §15). */
+
+export type HelpArticle = { id?: string; title: string; content: string; audience: 'host' | 'user' | 'all'; active: boolean; updatedAt?: string }
+export const listHelpArticles = () =>
+  live(() => apiFetch<unknown>('/admin/support/articles'), () => ({ articles: [] as HelpArticle[] }))
+export const createHelpArticle = (a: HelpArticle) =>
+  apiFetch<unknown>('/admin/support/articles', { method: 'POST', body: JSON.stringify(a) })
+export const updateHelpArticle = (id: string, patch: Partial<HelpArticle>) =>
+  apiFetch<unknown>(`/admin/support/articles/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) })
+export const deleteHelpArticle = (id: string) =>
+  apiFetch<unknown>(`/admin/support/articles/${encodeURIComponent(id)}`, { method: 'DELETE' })
+
+export type BotSettings = { enabled: boolean; model: string }
+export const getBotSettings = () =>
+  live(() => apiFetch<unknown>('/admin/support/bot-settings'), () => ({ enabled: true, model: 'claude-haiku-4-5' }))
+export const saveBotSettings = (s: BotSettings) =>
+  apiFetch<unknown>('/admin/support/bot-settings', { method: 'PATCH', body: JSON.stringify(s) })
+
 /* ---------- Calls ---------- */
 
 export const listLiveCalls = () => live(() => apiFetch<unknown>('/admin/calls/live'), sample.liveCalls)

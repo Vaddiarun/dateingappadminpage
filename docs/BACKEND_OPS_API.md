@@ -391,6 +391,21 @@ The host app has new screens: Profile header, Edit profile, KYC details, My with
 
 ---
 
+## 15. Support bot: help articles & settings (admin)
+
+The admin dashboard has a **Support Bot** page for managing help articles and bot settings (Support → "Bot & articles"). It calls the paths below. **If yours differ, send them and we'll switch; it's a one-line change.**
+
+| Endpoint | Body / response |
+|---|---|
+| `GET /admin/support/articles` | `{ "articles": [{ "id", "title", "content", "audience": "host"\|"user"\|"all", "active": true, "updatedAt" }] }` |
+| `POST /admin/support/articles` | `{ title, content, audience, active }` → the created article |
+| `PATCH /admin/support/articles/:id` | any of `{ title, content, audience, active }` |
+| `DELETE /admin/support/articles/:id` | 204 |
+| `GET /admin/support/bot-settings` | `{ "enabled": true, "model": "claude-haiku-4-5" }` |
+| `PATCH /admin/support/bot-settings` | `{ enabled, model }` |
+
+---
+
 ## Suggested order
 
 1. **Calls** (`/admin/calls`, `/admin/calls/live`, end call) and **user wallet + adjustments**. These are the most-used support tools.

@@ -64,6 +64,7 @@ export function Support() {
       title="Support"
       actions={
         <>
+          <Link to="/support/bot" className="text-[12px] text-primary underline underline-offset-2">Bot & articles</Link>
           <SearchInput placeholder="Search tickets" value={q} onChange={setQ} />
           <Select value={role} onChange={setRole} label="From" options={[{ value: 'all', label: 'Everyone' }, { value: 'user', label: 'Users' }, { value: 'host', label: 'Hosts' }]} />
           <Select value={needsAgent} onChange={setNeedsAgent} label="Needs agent" options={[{ value: 'all', label: 'Any' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} />

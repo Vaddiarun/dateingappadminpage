@@ -17,7 +17,6 @@ import {
   SupportIcon,
   PhoneIcon,
   GiftIcon,
-  ShieldIcon,
   ChevronDownIcon,
   LogoMark,
 } from './Icon'

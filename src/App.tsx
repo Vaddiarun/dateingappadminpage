@@ -33,6 +33,7 @@ import {
 import { AuditLogs } from './pages/AuditLogs'
 import { Broadcast, BroadcastNew, BroadcastSent } from './pages/Broadcast'
 import { Support, SupportTicket } from './pages/Support'
+import { SupportBot } from './pages/SupportBot'
 import { Calls, CallDetail } from './pages/Calls'
 import { LiveMonitor } from './pages/LiveMonitor'
 import { Gifts } from './pages/Gifts'
@@ -112,6 +113,7 @@ function App() {
         <Route path="/pricing/app-settings" element={<AppSettings />} />
 
         <Route path="/support" element={<Support />} />
+        <Route path="/support/bot" element={<SupportBot />} />
         <Route path="/support/:id" element={<SupportTicket />} />
         <Route path="/calls" element={<Calls />} />
         <Route path="/calls/:id" element={<CallDetail />} />
