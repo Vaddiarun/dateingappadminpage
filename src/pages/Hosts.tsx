@@ -29,6 +29,7 @@ import { useAsync } from '../lib/useAsync'
 import { formatDate } from '../lib/format'
 import { pick, pickAny, unwrapList, unwrapObject } from '../lib/pick'
 import { AccountCard, AccountActivityCard, AccountReportsCard } from './Users'
+import { HostPerformancePanel, AccountCallsPanel } from './opsPanels'
 
 type HostRow = { id: string; email: string; kyc: string; availability: string; status: string; lastActive: string }
 
@@ -217,11 +218,13 @@ export function HostDetail() {
     : null
 
   return (
-    <Page title={id} breadcrumb={`Hosts · ${tab === 'gallery' ? 'Gallery' : 'Overview'}`}>
+    <Page title={id} breadcrumb={`Hosts · ${({ gallery: 'Gallery', performance: 'Performance', calls: 'Calls' } as Record<string, string>)[tab] ?? 'Overview'}`}>
       <div className="mb-4">
         <Tabs
           tabs={[
             { key: 'overview', label: 'Overview' },
+            { key: 'performance', label: 'Performance' },
+            { key: 'calls', label: 'Calls' },
             { key: 'gallery', label: 'Gallery' },
           ]}
           active={tab}
@@ -229,7 +232,11 @@ export function HostDetail() {
         />
       </div>
 
-      {tab === 'overview' ? (
+      {tab === 'performance' ? (
+        <HostPerformancePanel hostId={id} />
+      ) : tab === 'calls' ? (
+        <AccountCallsPanel hostId={id} />
+      ) : tab === 'overview' ? (
         <DetailGrid variant="aside-main">
           <AccountCard
             id={id}

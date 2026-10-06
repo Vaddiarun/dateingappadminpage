@@ -88,7 +88,7 @@ export async function refreshAccessToken(): Promise<string | null> {
   return result
 }
 
-async function apiFetch<T = unknown>(path: string, init: RequestInit = {}, isRetry = false): Promise<T> {
+export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}, isRetry = false): Promise<T> {
   const token = getToken()
   const headers = new Headers(init.headers)
   if (init.body) headers.set('Content-Type', 'application/json')
@@ -131,7 +131,7 @@ function safeJsonParse(text: string): unknown {
   }
 }
 
-function qs(params: Record<string, string | number | undefined>): string {
+export function qs(params: Record<string, string | number | undefined>): string {
   const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
   if (entries.length === 0) return ''
   return '?' + entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&')

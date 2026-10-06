@@ -13,6 +13,7 @@ import {
   Button,
   KVList,
   KVRow,
+  Tabs,
   DetailGrid,
   LoadingState,
   ErrorState,
@@ -23,6 +24,7 @@ import { getUser, listUsers, setAccountStatus, ApiError } from '../lib/api'
 import { useAsync } from '../lib/useAsync'
 import { formatDate } from '../lib/format'
 import { pick, pickAny, unwrapList, unwrapObject } from '../lib/pick'
+import { UserWalletPanel, AccountCallsPanel } from './opsPanels'
 
 type UserRow = { id: string; email: string; status: string; lastActive: string }
 export type ActivityItem = { type: string; reference: string; when: string; accent?: boolean }
@@ -205,6 +207,7 @@ export function UserDetail() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const { data: user, loading, error, reload } = useAsync(() => getUser(id), [id])
+  const [tab, setTab] = useState('overview')
   const [confirm, setConfirm] = useState<{ kind: 'Suspend' | 'Ban' } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -238,7 +241,24 @@ export function UserDetail() {
     : null
 
   return (
-    <Page title={id} breadcrumb="Users">
+    <Page title={id} breadcrumb={`Users · ${tab === 'wallet' ? 'Wallet' : tab === 'calls' ? 'Calls' : 'Overview'}`}>
+      <div className="mb-4">
+        <Tabs
+          tabs={[
+            { key: 'overview', label: 'Overview' },
+            { key: 'wallet', label: 'Wallet & refunds' },
+            { key: 'calls', label: 'Calls' },
+          ]}
+          active={tab}
+          onChange={setTab}
+        />
+      </div>
+
+      {tab === 'wallet' ? (
+        <UserWalletPanel userId={id} />
+      ) : tab === 'calls' ? (
+        <AccountCallsPanel userId={id} />
+      ) : (
       <DetailGrid variant="aside-main">
         <AccountCard
           id={id}
@@ -255,6 +275,7 @@ export function UserDetail() {
           <AccountReportsCard reports={reports} />
         </div>
       </DetailGrid>
+      )}
 
       {actionError && <p className="mt-3 text-[12px] text-danger">{actionError}</p>}
 

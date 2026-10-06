@@ -22,6 +22,7 @@ import { listModerationQueue, resolveModerationReport, ApiError } from '../lib/a
 import { useAsync } from '../lib/useAsync'
 import { formatDate } from '../lib/format'
 import { pick, pickAny, unwrapList } from '../lib/pick'
+import { ReportConversationCard } from './opsPanels'
 
 const ACTIONS = ['Dismiss', 'Warn', 'Suspend', 'Ban'] as const
 type ActionLabel = (typeof ACTIONS)[number]
@@ -126,11 +127,10 @@ export function ModerationDetail() {
               <ReadonlyField label="Reported By" value={pickAny(report, ['reportedBy', 'reporterId'], '—')} />
               <ReadonlyField label="Reported On" value={formatDate(pickAny(report, ['createdAt', 'reportedOn'], null))} />
               <ReadonlyField label="Context" value={pick(report, 'context', '—')} />
-              <div className="col-span-2 grid h-40 place-items-center rounded-[var(--radius-control)] border border-dashed border-line bg-fill text-[11px] text-faint">
-                Reported content placeholder
-              </div>
             </div>
           </Card>
+
+          <ReportConversationCard reportId={id} reportedId={pickAny<string>(report, ['targetId', 'entity'], '')} />
         </div>
 
         <Card className="h-fit">

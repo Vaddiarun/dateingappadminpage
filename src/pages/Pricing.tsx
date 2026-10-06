@@ -95,6 +95,13 @@ export function Pricing() {
       action: 'Open',
       to: '/pricing/auto-approval',
     },
+    {
+      key: 'app-settings',
+      title: 'App Settings',
+      summary: 'Host daily goal, call quality bands, chat & live limits',
+      action: 'Open',
+      to: '/pricing/app-settings',
+    },
   ]
 
   return (

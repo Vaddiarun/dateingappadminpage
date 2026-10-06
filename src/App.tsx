@@ -32,6 +32,12 @@ import {
 import { AgeMode } from './pages/AgeMode'
 import { AuditLogs } from './pages/AuditLogs'
 import { Broadcast, BroadcastNew, BroadcastSent } from './pages/Broadcast'
+import { Support, SupportTicket } from './pages/Support'
+import { Calls, CallDetail } from './pages/Calls'
+import { LiveMonitor } from './pages/LiveMonitor'
+import { Gifts } from './pages/Gifts'
+import { Security } from './pages/Security'
+import { AppSettings } from './pages/AppSettings'
 
 function NotFound() {
   return (
@@ -102,6 +108,15 @@ function App() {
           element={<NumericConfig configKey="auto-approval" />}
         />
         <Route path="/pricing/config-updated" element={<ConfigUpdatedGeneric />} />
+        <Route path="/pricing/app-settings" element={<AppSettings />} />
+
+        <Route path="/support" element={<Support />} />
+        <Route path="/support/:id" element={<SupportTicket />} />
+        <Route path="/calls" element={<Calls />} />
+        <Route path="/calls/:id" element={<CallDetail />} />
+        <Route path="/live" element={<LiveMonitor />} />
+        <Route path="/gifts" element={<Gifts />} />
+        <Route path="/security" element={<Security />} />
 
         <Route path="/moderation" element={<Moderation />} />
         <Route path="/moderation/:id" element={<ModerationDetail />} />

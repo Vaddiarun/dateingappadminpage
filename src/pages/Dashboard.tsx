@@ -4,6 +4,7 @@ import { getDashboard } from '../lib/api'
 import { useAsync } from '../lib/useAsync'
 import { formatNumber, formatPaise } from '../lib/format'
 import { pick, pickAny, unwrapList } from '../lib/pick'
+import { DashboardInsights } from './opsPanels'
 
 function Stat({
   label,
@@ -104,6 +105,9 @@ export function Dashboard() {
             </p>
           </div>
         </Card>
+
+        <div className="mt-2 text-[11px] font-semibold tracking-[0.14em] text-ink uppercase">Calls & hosts · last 14 days</div>
+        <DashboardInsights />
 
         <Card>
           <CardHeader>Top-earning Hosts</CardHeader>

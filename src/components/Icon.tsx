@@ -232,3 +232,48 @@ export function LogoMark(p: IconProps) {
     </svg>
   )
 }
+
+export function SupportIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M4 5h16v11H9l-5 4V5Z" />
+      <path d="M8.5 9.5h7M8.5 12.5h4.5" />
+    </svg>
+  )
+}
+
+export function PhoneIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M5 4h3.5l1.8 4.3-2.2 1.4a11 11 0 0 0 6.2 6.2l1.4-2.2L20 15.5V19a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z" />
+    </svg>
+  )
+}
+
+export function GiftIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <rect x="3.5" y="8" width="17" height="4" rx="1" />
+      <path d="M5 12v8h14v-8M12 8v12" />
+      <path d="M12 8c-1.5-3.5-5.5-3.5-5.5-1S10 8 12 8Zm0 0c1.5-3.5 5.5-3.5 5.5-1S14 8 12 8Z" />
+    </svg>
+  )
+}
+
+export function ShieldIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6l7-3Z" />
+      <path d="M12 8v5M12 16h.01" />
+    </svg>
+  )
+}
+
+export function SettingsIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" />
+    </svg>
+  )
+}
