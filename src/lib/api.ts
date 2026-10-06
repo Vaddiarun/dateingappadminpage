@@ -62,14 +62,14 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 
 let refreshPromise: Promise<string | null> | null = null
 
-/** POST /auth/token/refresh — confirmed live; not in the Postman collection but the login response's refreshToken implies it. Rotates the refresh token too. */
+/** POST /admin/auth/token/refresh — confirmed live. The backend namespaces every endpoint by app surface (/user/*, /host/*, /admin/*), so this sits under /admin like the rest of this file, not the old unprefixed /auth/token/refresh. Rotates the refresh token too. */
 export async function refreshAccessToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise
   refreshPromise = (async () => {
     const refreshToken = getRefreshToken()
     if (!refreshToken) return null
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/token/refresh`, {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/token/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -101,7 +101,7 @@ export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}
     throw new ApiError(0, `Could not reach the API at ${API_BASE_URL}. Is the backend running?`)
   }
 
-  if (res.status === 401 && !isRetry && path !== '/auth/token/refresh') {
+  if (res.status === 401 && !isRetry && path !== '/admin/auth/token/refresh') {
     const newToken = await refreshAccessToken()
     if (newToken) return apiFetch<T>(path, init, true)
     clearSession()
@@ -140,7 +140,7 @@ export function qs(params: Record<string, string | number | undefined>): string 
 /* ---------- Auth ---------- */
 
 export function adminLogin(email: string, password: string) {
-  return apiFetch<unknown>('/auth/admin/login', {
+  return apiFetch<unknown>('/admin/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
@@ -237,6 +237,46 @@ export function replaceWithdrawalSlabsConfig(slabs: WithdrawalSlabInput[]) {
   })
 }
 
+/* ---------- Media cost (which network carries calls / live video) ---------- */
+
+export type CallMediaMode = 'agora' | 'p2p' | 'auto'
+export type CallMediaConfig = { current: CallMediaMode; autoP2pPercent: number; agoraKickOnEnd: boolean }
+
+export function getCallMediaConfig() {
+  return apiFetch<CallMediaConfig>('/admin/config/call-media')
+}
+
+export function setCallMediaConfig(config: { provider: CallMediaMode; autoP2pPercent: number; agoraKickOnEnd: boolean }) {
+  return apiFetch<unknown>('/admin/config/call-media', { method: 'POST', body: JSON.stringify(config) })
+}
+
+export type LiveMediaProvider = 'agora' | 'cloudflare'
+export type LiveMediaConfig = { provider: LiveMediaProvider; agoraKickOnEnd: boolean; pauseHiddenVideo: boolean }
+
+export function getLiveMediaConfig() {
+  return apiFetch<LiveMediaConfig>('/admin/config/live-media')
+}
+
+export function setLiveMediaConfig(config: LiveMediaConfig) {
+  return apiFetch<unknown>('/admin/config/live-media', { method: 'POST', body: JSON.stringify(config) })
+}
+
+export type MediaQualityRow = {
+  mediaProvider: 'agora' | 'p2p'
+  reports: number
+  connectedPercent: number | null
+  relayedPercent: number | null
+  avgConnectMs: number | null
+  avgRttMs: number | null
+  avgPacketLossPercent: number | null
+  avgVideoKbps: number | null
+}
+export type MediaQuality = { days: number; byProvider: MediaQualityRow[]; autoCalls: number; fellBackToAgora: number }
+
+export function getCallMediaQuality(days: number) {
+  return apiFetch<MediaQuality>(`/admin/calls/media-quality?days=${days}`)
+}
+
 export function listGiftsAdmin() {
   return apiFetch<unknown>('/admin/gifts')
 }
@@ -322,19 +362,6 @@ export function sendBroadcastMessage(title: string, message: string, recipients:
   return apiFetch<unknown>('/admin/broadcast-messages', {
     method: 'POST',
     body: JSON.stringify({ title, message, recipients }),
-  })
-}
-
-/* ---------- Adult Mode ---------- */
-
-export function getAdultModeConfig() {
-  return apiFetch<unknown>('/admin/config/adult-mode')
-}
-
-export function setAdultModeConfig(enabled: boolean) {
-  return apiFetch<unknown>('/admin/config/adult-mode', {
-    method: 'POST',
-    body: JSON.stringify({ enabled }),
   })
 }
 

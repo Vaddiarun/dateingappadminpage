@@ -24,12 +24,12 @@ import {
   GiftCatalog,
   EditGift,
 } from './pages/PricingConfig'
+import { MediaCost } from './pages/MediaCost'
 import {
   Moderation,
   ModerationDetail,
   ModerationActionApplied,
 } from './pages/Moderation'
-import { AgeMode } from './pages/AgeMode'
 import { AuditLogs } from './pages/AuditLogs'
 import { Broadcast, BroadcastNew, BroadcastSent } from './pages/Broadcast'
 import { Support, SupportTicket } from './pages/Support'
@@ -97,6 +97,7 @@ function App() {
         />
         <Route path="/pricing/host-override" element={<HostCommissionOverride />} />
         <Route path="/pricing/withdrawal-slabs" element={<WithdrawalSlabs />} />
+        <Route path="/pricing/media-cost" element={<MediaCost />} />
         <Route path="/pricing/gift-catalog" element={<GiftCatalog />} />
         <Route path="/pricing/gift-catalog/:id/edit" element={<EditGift />} />
         <Route
@@ -125,7 +126,6 @@ function App() {
           element={<ModerationActionApplied />}
         />
 
-        <Route path="/age-mode" element={<AgeMode />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
 
         <Route path="/broadcast" element={<Broadcast />} />

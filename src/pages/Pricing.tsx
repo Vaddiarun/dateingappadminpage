@@ -96,11 +96,11 @@ export function Pricing() {
       to: '/pricing/auto-approval',
     },
     {
-      key: 'app-settings',
-      title: 'App Settings',
-      summary: 'Host daily goal, call quality bands, chat & live limits',
+      key: 'media',
+      title: 'Media & Video Cost',
+      summary: 'Which network carries calls and live video',
       action: 'Open',
-      to: '/pricing/app-settings',
+      to: '/pricing/media-cost',
     },
   ]
 

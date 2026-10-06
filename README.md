@@ -20,7 +20,7 @@ npm run dev
 - `src/lib/configHistory.ts` — every `/admin/config/*` GET returns the *full change history*, newest first, not just the current value; these helpers collapse that down to what's in effect.
 - `src/lib/useAsync.ts` — small loading/error/data hook wrapping the API calls.
 
-The 10-item sidebar nav (Dashboard, Users, Hosts, KYC, Withdrawals, Pricing & Economics, Moderation, 18+ Mode, Audit Logs, Broadcast Messaging) intentionally excludes Sub-Admin management and Live Broadcasts, which exist in the Postman collection/backend but weren't part of the approved Figma design for this build.
+The 9-item sidebar nav (Dashboard, Users, Hosts, KYC, Withdrawals, Pricing & Economics, Moderation, Audit Logs, Broadcast Messaging) intentionally excludes Sub-Admin management and Live Broadcasts, which exist in the Postman collection/backend but weren't part of the approved Figma design for this build.
 
 ## Notes on the API integration
 

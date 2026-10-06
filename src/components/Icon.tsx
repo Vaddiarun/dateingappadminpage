@@ -88,16 +88,6 @@ export function ModerationIcon(p: IconProps) {
   )
 }
 
-export function AgeModeIcon(p: IconProps) {
-  return (
-    <svg {...base(p)}>
-      <path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z" />
-      <path d="M12 8v4.5" />
-      <circle cx="12" cy="15.5" r="0.6" fill="currentColor" />
-    </svg>
-  )
-}
-
 export function SubAdminIcon(p: IconProps) {
   return (
     <svg {...base(p)}>
