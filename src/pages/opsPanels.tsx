@@ -283,6 +283,13 @@ export function ReportConversationCard({ reportId, reportedId }: { reportId: str
                     {pick<string>(m, 'senderName', '—')} · {humanize(pick<string>(m, 'senderRole', ''))} · {formatDateTime(pick(m, 'createdAt', null))}
                   </span>
                   <div className={`w-fit max-w-[90%] rounded-[10px] px-3 py-2 text-[12px] ${flagged ? 'bg-danger/10 text-ink ring-1 ring-danger/30' : 'bg-fill text-ink'}`}>
+                    {/* Photos come with a short-lived signed URL; gifts with the gift that was sent. */}
+                    {pick<string>(m, 'type', 'text') === 'image' && pick<string>(m, 'mediaUrl', '') && (
+                      <a href={pick<string>(m, 'mediaUrl', '')} target="_blank" rel="noreferrer" className="mb-1 block">
+                        <img src={pick<string>(m, 'mediaUrl', '')} alt="Photo sent in chat" className="max-h-48 rounded-[8px] object-cover" />
+                      </a>
+                    )}
+                    {pick<string>(m, 'type', 'text') === 'gift' && <span className="text-muted">Sent a gift: {pick<string>(m, 'gift.name', 'gift')}</span>}
                     {pick<string>(m, 'content', '')}
                   </div>
                 </div>

@@ -10,20 +10,30 @@ import { pick, pickAny, unwrapList, unwrapObject } from '../lib/pick'
 
 /*
  * Backend shapes (host + user tickets in one list):
- *   GET /admin/support/tickets?status=open|closed&needsAgent=true|false
+ *   GET /admin/support/tickets?status=open|in_progress|waiting_on_customer|resolved|closed&needsAgent=true|false
  *     → { tickets: [{ ticket: { id, subject, category, status, needsAgent, accountId, lastMessageAt, createdAt },
  *                     account: { id, name, phone, role: 'host' | 'user' } }] }
  *   GET /admin/support/tickets/:id → { ticket, messages: [{ id, sender: 'host'|'user'|'bot'|'agent', senderName, content, createdAt }] }
- *   PATCH /admin/support/tickets/:id { status: 'open' | 'closed' }
+ *   PATCH /admin/support/tickets/:id { status?: open|in_progress|waiting_on_customer|resolved|closed, priority?: low|medium|high|urgent }
  */
 
-const STATUS_TABS = [
-  { key: 'open', label: 'Open' },
-  { key: 'closed', label: 'Closed' },
-  { key: 'all', label: 'All' },
+const STATUSES = [
+  { value: 'open', label: 'Open' },
+  { value: 'in_progress', label: 'In progress' },
+  { value: 'waiting_on_customer', label: 'Waiting on customer' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'closed', label: 'Closed' },
+]
+const STATUS_TABS = [...STATUSES.map((s) => ({ key: s.value, label: s.label })), { key: 'all', label: 'All' }]
+const PRIORITIES = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' },
 ]
 
-export const ticketStatusTone = (s: string): PillTone => (s === 'open' ? 'warn' : s === 'closed' ? 'ok' : 'neutral')
+export const ticketStatusTone = (s: string): PillTone =>
+  s === 'open' ? 'warn' : s === 'in_progress' ? 'primary' : s === 'resolved' || s === 'closed' ? 'ok' : 'neutral'
 
 /** Re-fetches every `ms` while the page is open and visible, without the loading spinner, so new
  * messages and tickets show up by themselves. Returns the latest data (or null until the first poll).
@@ -232,14 +242,20 @@ export function SupportTicket() {
                   <Pill label={humanize(status)} tone={ticketStatusTone(status)} />
                   {pick<boolean>(ticket, 'needsAgent', false) && <Pill label="Needs agent" tone="danger" />}
                 </div>
-                <Button
-                  size="sm"
-                  variant={status === 'open' ? 'outline' : 'primary'}
+                <Select
+                  label="Status"
+                  value={status}
+                  onChange={(v) => run(() => updateTicket(id, { status: v }))}
+                  options={STATUSES}
                   disabled={preview || busy}
-                  onClick={() => run(() => updateTicket(id, { status: status === 'open' ? 'closed' : 'open' }))}
-                >
-                  {status === 'open' ? 'Close ticket' : 'Reopen ticket'}
-                </Button>
+                />
+                <Select
+                  label="Priority"
+                  value={pick<string>(ticket, 'priority', 'medium')}
+                  onChange={(v) => run(() => updateTicket(id, { priority: v }))}
+                  options={PRIORITIES}
+                  disabled={preview || busy}
+                />
                 {preview && <p className="text-[10px] text-muted">Changes are disabled in preview.</p>}
                 <KVList>
                   <KVRow label="Category" value={humanize(pick<string>(ticket, 'category', ''))} />
@@ -249,6 +265,19 @@ export function SupportTicket() {
                 {actionError && <p className="text-[11px] text-danger">{actionError}</p>}
               </div>
             </Card>
+
+            {(pick<string>(ticket, 'summary', '') || pick<string>(ticket, 'handoffReason', '')) && (
+              <Card>
+                <CardHeader>From the assistant</CardHeader>
+                <div className="flex flex-col gap-2 p-5 text-[12px] leading-5">
+                  {pick<string>(ticket, 'handoffReason', '') && (
+                    <div><span className="text-muted">Why it needs a person: </span>{pick<string>(ticket, 'handoffReason', '')}</div>
+                  )}
+                  {pick<string>(ticket, 'summary', '') && <p className="whitespace-pre-wrap text-ink">{pick<string>(ticket, 'summary', '')}</p>}
+                  <p className="text-[10px] text-faint">Written automatically — check it against the conversation.</p>
+                </div>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>Requester</CardHeader>
