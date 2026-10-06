@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Page } from '../components/Layout'
 import { Table, Row, Cell, Card, CardHeader, Tabs, Button, KVList, KVRow, DetailGrid, LoadingState, ErrorState, SearchInput } from '../components/ui'
@@ -25,6 +25,28 @@ const STATUS_TABS = [
 
 export const ticketStatusTone = (s: string): PillTone => (s === 'open' ? 'warn' : s === 'closed' ? 'ok' : 'neutral')
 
+/** Re-fetches every `ms` while the page is open and visible, without the loading spinner, so new
+ * messages and tickets show up by themselves. Returns the latest data (or null until the first poll).
+ * Skipped in preview (sample data) mode. */
+function useLiveRefresh<T>(fn: () => Promise<{ data: T; preview: boolean }>, ms: number, deps: unknown[], enabled: boolean) {
+  const [latest, setLatest] = useState<T | null>(null)
+  const fnRef = useRef(fn)
+  fnRef.current = fn
+  useEffect(() => {
+    setLatest(null)
+    if (!enabled) return
+    let stopped = false
+    const tick = () => {
+      if (document.visibilityState !== 'visible') return
+      fnRef.current().then((r) => { if (!stopped && !r.preview) setLatest(r.data) }).catch(() => {})
+    }
+    const t = setInterval(tick, ms)
+    return () => { stopped = true; clearInterval(t) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...deps, enabled, ms])
+  return latest
+}
+
 type Account = { id: string; name: string; phone: string; role: string }
 
 /** The account a ticket belongs to — `account` on the row/response, with older field names as fallbacks. */
@@ -48,7 +70,11 @@ export function Support() {
     () => listTickets({ status: status === 'all' ? undefined : status, needsAgent: needsAgent === 'all' ? undefined : needsAgent }),
     [status, needsAgent],
   )
-  const rows = unwrapList<Record<string, unknown>>(data, 'tickets')
+  const liveList = useLiveRefresh(
+    () => listTickets({ status: status === 'all' ? undefined : status, needsAgent: needsAgent === 'all' ? undefined : needsAgent }),
+    15_000, [status, needsAgent], !preview && !loading,
+  )
+  const rows = unwrapList<Record<string, unknown>>(liveList ?? data, 'tickets')
     .map((row) => {
       const ticket = unwrapObject(row, 'ticket')
       return { ticket, account: accountOf(row, ticket) }
@@ -119,7 +145,13 @@ const SENDER_STYLE: Record<string, string> = {
 export function SupportTicket() {
   const params = useParams()
   const id = params.id ? decodeURIComponent(params.id) : ''
-  const { data, preview, loading, error, reload } = useLoaded(() => getTicket(id), [id])
+  const { data: loaded, preview, loading, error, reload } = useLoaded(() => getTicket(id), [id])
+  // New messages from the user/host (and other agents) appear without leaving the ticket.
+  const liveData = useLiveRefresh(() => getTicket(id), 4_000, [id, loaded], !preview && !loading)
+  const data = liveData ?? loaded
+  const endRef = useRef<HTMLDivElement>(null)
+  const msgCount = unwrapList(data, 'messages').length
+  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [msgCount])
   const [reply, setReply] = useState('')
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -171,6 +203,7 @@ export function SupportTicket() {
                 )
               })}
               {messages.length === 0 && <p className="text-[12px] text-muted">No messages yet.</p>}
+              <div ref={endRef} />
             </div>
             <div className="flex gap-2 border-t border-line p-3">
               <textarea
