@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui'
-import { EyeIcon, EyeOffIcon, LogoMark } from '../components/Icon'
+import { EyeIcon, EyeOffIcon } from '../components/Icon'
+import logoUrl from '../assets/logo.png'
 import { useAuth } from '../lib/auth'
 
 function FieldLabel({ children }: { children: string }) {
@@ -42,8 +43,8 @@ export function Login() {
         className="w-[620px] max-w-full rounded-[var(--radius-card)] bg-surface px-[60px] py-12 shadow-sm"
       >
         <div className="flex items-center gap-2 text-muted">
-          <LogoMark size={18} />
-          <span className="text-[15px] tracking-[0.02em]">COMPANY · ADMIN</span>
+          <img src={logoUrl} alt="" className="size-7 rounded-[7px]" />
+          <span className="text-[15px] tracking-[0.02em]">VIBE · ADMIN</span>
         </div>
 
         <div className="mt-7 flex flex-col gap-1.5">

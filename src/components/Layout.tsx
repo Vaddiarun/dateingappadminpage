@@ -18,8 +18,8 @@ import {
   PhoneIcon,
   GiftIcon,
   ChevronDownIcon,
-  LogoMark,
 } from './Icon'
+import logoUrl from '../assets/logo.png'
 
 type NavItem = { to: string; label: string; icon: ComponentType<{ size?: number }> }
 
@@ -43,9 +43,9 @@ function Sidebar() {
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-surface">
       <div className="flex items-center gap-2 px-5 py-4">
-        <LogoMark size={22} />
+        <img src={logoUrl} alt="" className="size-7 rounded-[7px]" />
         <span className="text-[13px] font-semibold tracking-[0.14em] text-ink">
-          COMPANY · ADMIN
+          VIBE · ADMIN
         </span>
       </div>
 

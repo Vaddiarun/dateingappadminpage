@@ -185,6 +185,139 @@ OTP not received: check the number, wait 30 seconds and tap Resend.
 
 If the problem continues, tell support your phone model and what you see.`,
   },
+  {
+    key: 'greeting-host',
+    title: 'Greetings and what I can help with (hosts)',
+    audience: 'host',
+    content: `When someone just says hi, hello, hey, namaste, hii or good morning, greet them back warmly in the same language and offer these options:
+
+1. Withdrawals and payments
+2. KYC verification
+3. Earnings, beans and levels
+4. Calls, live and availability
+5. Gifts
+6. App problems (camera, login)
+7. Talk to a person
+
+Example reply: "Hi! 👋 How can I help you today? I can help with withdrawals, KYC, earnings and levels, calls and live, gifts, or app problems. Or type 'talk to a person' to reach our team."
+
+Keep it short and friendly. Don't ask for their phone number or OTP.`,
+  },
+  {
+    key: 'greeting-user',
+    title: 'Greetings and what I can help with (users)',
+    audience: 'user',
+    content: `When someone just says hi, hello, hey, namaste, hii or good morning, greet them back warmly in the same language and offer these options:
+
+1. Recharge and balance
+2. Call and message charges
+3. VIP subscription
+4. Sending gifts
+5. Blocking or reporting someone
+6. App problems (camera, login)
+7. Talk to a person
+
+Example reply: "Hi! 👋 How can I help you today? I can help with recharges and balance, call charges, VIP, gifts, blocking or reporting, or app problems. Or type 'talk to a person' to reach our team."
+
+Keep it short and friendly. Never ask for their OTP, card details or UPI PIN.`,
+  },
+  {
+    key: 'thanks',
+    title: 'Thanks and goodbye',
+    audience: 'all',
+    content: `When someone says thank you, thanks, ok, okay, done, bye or 👍, reply briefly and kindly, for example: "You're welcome! 😊 If you need anything else, just message here anytime."
+
+Don't repeat the whole answer again. If their issue was handed to our team, remind them: "Our team will reply here."`,
+  },
+  {
+    key: 'talk-to-person',
+    title: 'Talking to a person and support hours',
+    audience: 'all',
+    content: `Anyone can ask to talk to a person — they can type "talk to a person" or tap the "Talk to a person" button in the chat. Our team then replies in the same chat.
+
+Support team hours: [fill in, e.g. 10 AM – 8 PM, Monday to Saturday].
+Usual reply time: [fill in].
+
+Refunds, bans, reports and disputes always go to a person.
+
+When a chat is closed by support, the person can start a new chat from the same screen.`,
+  },
+  {
+    key: 'withdrawal-failed',
+    title: 'Withdrawal rejected or failed',
+    audience: 'host',
+    content: `If a withdrawal is rejected or the transfer failed, the beans go back to your balance: [fill in — confirm this].
+
+The reason is shown in Settings → My Withdrawals → Details.
+
+Most common reasons: wrong bank account number or IFSC, a closed bank account, a UPI ID that doesn't accept payments, or KYC not approved.
+
+Fix your details in Settings → Payout details, then withdraw again. If you still get an error, our team will check it — support will pass this to a person.`,
+  },
+  {
+    key: 'profile-gallery',
+    title: 'Your profile, photos and gallery',
+    audience: 'host',
+    content: `Edit your name, bio, photo and interests in Settings → My Profile & Gallery. Your languages are in Settings → Languages.
+
+Add photos and videos in the "My Gallery" tab. A good profile photo and a few clear gallery photos help users choose to call you.
+
+Every upload is reviewed. Nudity, or showing contact details such as a phone number or social media handle, is removed.
+
+Your interests, hobbies and sports appear on your public profile.`,
+  },
+  {
+    key: 'chat-photos',
+    title: 'Chat messages and photos',
+    audience: 'all',
+    content: `You can message from the Chat tab or during a call. Emojis are supported.
+
+You can send photos in chat and during calls with the photo button. Tap a photo to see it full screen.
+
+Users pay the creator's message price for each message. Photos are charged like a message: [fill in — confirm].
+
+Don't share phone numbers, social media handles or payment details in chat — it's against the rules and can lead to a ban.`,
+  },
+  {
+    key: 'banned',
+    title: 'Account suspended or banned',
+    audience: 'all',
+    content: `Accounts are suspended or banned when the rules are broken — for example nudity, abuse, recording calls, or asking to meet or pay outside the app.
+
+The assistant can't change or explain a ban decision. Always hand these questions to a person, who will review the case.
+
+If someone thinks it was a mistake, ask them to describe what happened and our team will look into it.`,
+  },
+  {
+    key: 'notifications',
+    title: 'Notifications',
+    audience: 'all',
+    content: `Turn notifications on or off in Settings → Notifications: calls, messages, gifts, withdrawals and more.
+
+Not getting notifications? Allow notifications for the app in your phone settings, and make sure battery saver isn't stopping the app.
+
+Hosts can also turn on "Do not disturb" in Notifications.`,
+  },
+  {
+    key: 'payment-refund',
+    title: 'Payment problems and refunds',
+    audience: 'user',
+    content: `If money was taken from your bank or UPI but your balance didn't increase, it usually settles automatically within [fill in] minutes. If not, it is refunded to your account within [fill in] working days.
+
+Please share the payment ID or UTR number from your bank or UPI app — never share your OTP, card number or UPI PIN.
+
+Refund requests for calls, gifts or messages always go to a person, who will check the details.`,
+  },
+  {
+    key: 'live-user',
+    title: 'Watching live streams',
+    audience: 'user',
+    content: `Open the Live tab to see creators who are live now. Watching is free: [fill in — confirm].
+
+You can comment, send hearts and send gifts during a live stream. Gifts are paid from your balance, and everyone in the live sees who sent them.
+
+If a live stream doesn't load, check your internet connection and reopen it.`,
+  },
 ]
 
 export const hasPlaceholder = (text: string) => text.toLowerCase().includes(FILL_IN)
