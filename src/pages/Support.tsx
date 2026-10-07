@@ -207,6 +207,14 @@ export function SupportTicket() {
                       {pick(m, 'senderName', humanize(sender))} · {humanize(sender)} · {formatDateTime(pick(m, 'createdAt', null))}
                     </span>
                     <div className={`rounded-[12px] px-3.5 py-2.5 text-[12px] leading-5 whitespace-pre-wrap ${SENDER_STYLE[sender] ?? SENDER_STYLE.user}`}>
+                      {/* Attached photos (e.g. payment screenshots) — short-lived signed URLs. */}
+                      {unwrapList<Record<string, unknown>>(m, 'attachments')
+                        .filter((a) => pick<string>(a, 'type', '') === 'image' && pick<string>(a, 'url', ''))
+                        .map((a, j) => (
+                          <a key={j} href={pick<string>(a, 'url', '')} target="_blank" rel="noreferrer" className="mb-1 block">
+                            <img src={pick<string>(a, 'url', '')} alt="Attached photo" className="max-h-60 rounded-[8px] object-cover" />
+                          </a>
+                        ))}
                       {pick<string>(m, 'content', '')}
                     </div>
                   </div>
